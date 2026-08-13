@@ -33,23 +33,20 @@ namespace GameServer.Controllers
             }
             catch
             {
-                await Reply(conn, 1, "请求格式错误", null, 0, null);
+                await Reply(conn, MsgId.GetPlayerData, 1, "请求格式错误", null, 0, null);
                 return;
             }
 
-            // 1. 用 token 验证身份: 拿不到用户名 = 没登录
             if (!_sessions.TryGetUsername(req?.token ?? "", out string username))
             {
-                await Reply(conn, 1, "未登录或登录已失效", null, 0, null);
+                await Reply(conn, MsgId.GetPlayerData, 1, "未登录或登录已失效", null, 0, null);
                 return;
             }
 
-            // 2. 取玩家数据(没有就自动建)
             var data = await _playerData.GetOrCreateAsync(username);
             Logger.Info($"[玩家数据] {username} 金币={data.Coin}");
 
-            // 3. 返回
-            await Reply(conn, 0, "ok", username, data.Coin, data.InventoryJson);
+            await Reply(conn, MsgId.GetPlayerData, 0, "ok", username, data.Coin, data.InventoryJson);
         }
 
         /// <summary>
@@ -64,21 +61,18 @@ namespace GameServer.Controllers
             }
             catch
             {
-                await Reply(conn, 1, "请求格式错误", null, 0, null);
+                await Reply(conn, MsgId.SavePlayerData, 1, "请求格式错误", null, 0, null);
                 return;
             }
 
-            // 1. 验证 token
             if (!_sessions.TryGetUsername(req?.token ?? "", out string username))
             {
-                await Reply(conn, 1, "未登录或登录已失效", null, 0, null);
+                await Reply(conn, MsgId.SavePlayerData, 1, "未登录或登录已失效", null, 0, null);
                 return;
             }
 
-            // 2. 防呆: 金币不能为负
             int coin = Math.Max(0, req.coin);
 
-            // 3. 保存到数据库
             var data = new Models.PlayerData
             {
                 Username = username,
@@ -89,10 +83,10 @@ namespace GameServer.Controllers
             await _playerData.UpdateAsync(data);
 
             Logger.Info($"[玩家数据] {username} 保存: 金币={coin}");
-            await Reply(conn, 0, "保存成功", username, coin, data.InventoryJson);
+            await Reply(conn, MsgId.SavePlayerData, 0, "保存成功", username, coin, data.InventoryJson);
         }
 
-        private async Task Reply(Connection conn, int code, string msg, string username, int coin, string inventoryJson)
+        private async Task Reply(Connection conn, int msgId, int code, string msg, string username, int coin, string inventoryJson)
         {
             var resp = new PlayerDataResponse
             {
@@ -102,7 +96,7 @@ namespace GameServer.Controllers
                 coin = coin,
                 inventoryJson = inventoryJson
             };
-            await conn.SendAsync(MsgId.GetPlayerData, JsonSerializer.Serialize(resp));
+            await conn.SendAsync(msgId, JsonSerializer.Serialize(resp));
         }
     }
 }
