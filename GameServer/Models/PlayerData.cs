@@ -9,6 +9,7 @@
         public string Username { get; set; }
         public int Coin { get; set; } = 100;              // 初始金币100
         public string InventoryJson { get; set; } = "[]"; // 初始空背包
+        public string RoleDataJson { get; set; } = "{}"; // 角色等级/经验 JSON
         public string UpdatedAt { get; set; }
     }
 }

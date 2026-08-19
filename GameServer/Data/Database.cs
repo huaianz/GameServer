@@ -35,6 +35,17 @@ namespace GameServer.Data
             await using var cmd = new SqliteCommand(sql, conn);
             await cmd.ExecuteNonQueryAsync();
             Logger.Info("[数据库] users / player_data 表已就绪");
+
+            string checkSql = "SELECT COUNT(*) FROM pragma_table_info('player_data') WHERE name = 'role_data';";
+            await using var checkCmd = new SqliteCommand(checkSql, conn);
+            long colCount = (long)await checkCmd.ExecuteScalarAsync();
+            if (colCount == 0)
+            {
+                await using var alterCmd = new SqliteCommand(
+                    "ALTER TABLE player_data ADD COLUMN role_data TEXT NOT NULL DEFAULT '{}';", conn);
+                await alterCmd.ExecuteNonQueryAsync();
+                Logger.Info("[数据库] 已为 player_data 补充 role_data 列");
+            }
         }
 
         public SqliteConnection CreateConnection()

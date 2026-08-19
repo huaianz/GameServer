@@ -16,6 +16,7 @@
         public string token { get; set; }
         public int coin { get; set; }
         public string inventoryJson { get; set; }
+        public string roleDataJson { get; set; }   //角色等级/经验
     }
 
     /// <summary>
@@ -28,5 +29,6 @@
         public string username { get; set; }
         public int coin { get; set; }
         public string inventoryJson { get; set; }
+        public string roleDataJson { get; set; }   //角色等级/经验
     }
 }

@@ -33,20 +33,20 @@ namespace GameServer.Controllers
             }
             catch
             {
-                await Reply(conn, MsgId.GetPlayerData, 1, "请求格式错误", null, 0, null);
+                await Reply(conn, MsgId.GetPlayerData, 1, "请求格式错误", null, 0, null, null);
                 return;
             }
 
             if (!_sessions.TryGetUsername(req?.token ?? "", out string username))
             {
-                await Reply(conn, MsgId.GetPlayerData, 1, "未登录或登录已失效", null, 0, null);
+                await Reply(conn, MsgId.GetPlayerData, 1, "未登录或登录已失效", null, 0, null, null);
                 return;
             }
 
             var data = await _playerData.GetOrCreateAsync(username);
             Logger.Info($"[玩家数据] {username} 金币={data.Coin}");
 
-            await Reply(conn, MsgId.GetPlayerData, 0, "ok", username, data.Coin, data.InventoryJson);
+            await Reply(conn, MsgId.GetPlayerData, 0, "ok", username, data.Coin, data.InventoryJson, data.RoleDataJson);
         }
 
         /// <summary>
@@ -61,13 +61,13 @@ namespace GameServer.Controllers
             }
             catch
             {
-                await Reply(conn, MsgId.SavePlayerData, 1, "请求格式错误", null, 0, null);
+                await Reply(conn, MsgId.SavePlayerData, 1, "请求格式错误", null, 0, null, null);
                 return;
             }
 
             if (!_sessions.TryGetUsername(req?.token ?? "", out string username))
             {
-                await Reply(conn, MsgId.SavePlayerData, 1, "未登录或登录已失效", null, 0, null);
+                await Reply(conn, MsgId.SavePlayerData, 1, "未登录或登录已失效", null, 0, null, null);
                 return;
             }
 
@@ -78,15 +78,19 @@ namespace GameServer.Controllers
                 Username = username,
                 Coin = coin,
                 InventoryJson = req.inventoryJson ?? "[]",
+                RoleDataJson = req.roleDataJson ?? "{}",   // 新增: 存角色数据
                 UpdatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
             };
             await _playerData.UpdateAsync(data);
 
             Logger.Info($"[玩家数据] {username} 保存: 金币={coin}");
-            await Reply(conn, MsgId.SavePlayerData, 0, "保存成功", username, coin, data.InventoryJson);
+            await Reply(conn, MsgId.SavePlayerData, 0, "保存成功", username, coin, data.InventoryJson, data.RoleDataJson);
         }
 
-        private async Task Reply(Connection conn, int msgId, int code, string msg, string username, int coin, string inventoryJson)
+        /// <summary>
+        /// 统一响应出口(多了一个 roleDataJson 参数)
+        /// </summary>
+        private async Task Reply(Connection conn, int msgId, int code, string msg, string username, int coin, string inventoryJson, string roleDataJson)
         {
             var resp = new PlayerDataResponse
             {
@@ -94,7 +98,8 @@ namespace GameServer.Controllers
                 msg = msg,
                 username = username,
                 coin = coin,
-                inventoryJson = inventoryJson
+                inventoryJson = inventoryJson,
+                roleDataJson = roleDataJson
             };
             await conn.SendAsync(msgId, JsonSerializer.Serialize(resp));
         }
