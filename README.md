@@ -108,35 +108,6 @@ dotnet run --project GameServer
       "inventoryJson":"[]","roleDataJson":"{}","questDataJson":"{}"}
 ```
 
-## 快速验证（PowerShell）
-
-```powershell
-function Send-Msg($msgId, $json) {
-  $c = New-Object System.Net.Sockets.TcpClient('127.0.0.1', 8888)
-  $s = $c.GetStream()
-  $body = [System.Text.Encoding]::UTF8.GetBytes($json)
-  $len = [BitConverter]::GetBytes([int]$body.Length)
-  $id  = [BitConverter]::GetBytes([int]$msgId)
-  $s.Write($len,0,4); $s.Write($id,0,4); $s.Write($body,0,$body.Length)
-  $hdr = New-Object byte[] 8
-  $n = 0
-  while ($n -lt 8) { $n += $s.Read($hdr, $n, 8 - $n) }
-  $rlen = [BitConverter]::ToInt32($hdr,0)
-  $r = New-Object byte[] $rlen
-  $n = 0
-  while ($n -lt $rlen) { $n += $s.Read($r, $n, $rlen - $n) }
-  $resp = [System.Text.Encoding]::UTF8.GetString($r,0,$rlen)
-  $c.Close()
-  return $resp
-}
-
-Send-Msg 100 '{"username":"test","password":"123456"}'
-$login = Send-Msg 101 '{"username":"test","password":"123456"}'
-$token = ([regex]::Match($login, '"token":"([a-f0-9]+)"')).Groups[1].Value
-Send-Msg 200 ('{"token":"' + $token + '"}')
-Send-Msg 201 ('{"token":"' + $token + '","coin":500,"inventoryJson":"[]"}')
-```
-
 ## 数据库
 
 首次启动自动建表，旧库缺列时自动 `ALTER TABLE` 兼容：
