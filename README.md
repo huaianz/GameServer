@@ -147,4 +147,3 @@ Send-Msg 201 ('{"token":"' + $token + '","coin":500,"inventoryJson":"[]"}')
 ## 相关
 
 - 客户端工程：[shoot-yuanshen](https://github.com/huaianz/shoot-yuanshen)
-- 逐文件代码详解：[Docs/服务器代码详解.md](Docs/服务器代码详解.md)
